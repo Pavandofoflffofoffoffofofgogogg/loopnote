@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { NotebookPen, Repeat, Sparkles, Shield, ArrowRight } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
 export default function LandingPage() {
@@ -68,13 +67,10 @@ export default function LandingPage() {
         >
           <div className="absolute inset-0 bg-accent/20 blur-[120px] rounded-full" />
           <div className="relative glass p-4 rounded-[2rem] overflow-hidden border-white/10">
-            <div className="relative aspect-video rounded-2xl overflow-hidden">
-               <Image 
-                src="/hero.png" 
-                alt="Loopnote Mockup" 
-                fill 
-                className="object-cover opacity-80" 
-              />
+            <div className="relative aspect-video rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-blue-500/10">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-64 h-64 bg-indigo-500/20 blur-[80px] rounded-full animate-pulse-slow" />
+              </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-10 left-10 text-left">
                 <div className="text-2xl font-heading font-bold">The Zen Editor</div>
