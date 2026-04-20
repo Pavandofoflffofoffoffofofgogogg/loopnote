@@ -1,138 +1,133 @@
-"use client";
+'use client'
 
-import { motion } from "framer-motion";
-import { 
-  Plus, Search, Settings, 
-  LayoutDashboard, FileText, 
-  Star, Archive, Trash2,
-  ChevronRight, MoreHorizontal
-} from "lucide-react";
-import Link from "next/link";
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 export default function DashboardPage() {
+  const [user, setUser] = useState<any>(null)
+  const [notes, setNotes] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    const load = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/login')
+        return
+      }
+      setUser(user)
+
+      // Fetch notes
+      const { data: notesData } = await supabase
+        .from('notes')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      setNotes(notesData || [])
+      setLoading(false)
+    }
+    load()
+  }, [router])
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
+  const daysUntil = (date: string) => {
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    const then = new Date(date)
+    const diff = Math.ceil((then.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    return diff
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
+        Loading...
+      </div>
+    )
+  }
+
   return (
-    <div className="flex h-screen bg-black text-white font-body">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-white/10 flex flex-col glass">
-        <div className="p-6 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-heading font-bold tracking-tighter">
-            Loop<span className="text-brand-primary">note</span>
-          </Link>
-        </div>
-
-        <nav className="flex-1 px-4 py-4 space-y-2">
-          <NavItem icon={<LayoutDashboard size={20} />} label="Overview" active />
-          <NavItem icon={<FileText size={20} />} label="All Notes" />
-          <NavItem icon={<Star size={20} />} label="Favorites" />
-          <NavItem icon={<Archive size={20} />} label="Archived" />
-          <div className="pt-8 px-2 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
-            Recent Loops
-          </div>
-          <NavItem label="Product Roadmap" dot="indigo" />
-          <NavItem label="Personal Journal" dot="purple" />
-          <NavItem label="Deep Focus Sessions" dot="emerald" />
-        </nav>
-
-        <div className="p-4 border-t border-white/10">
-          <NavItem icon={<Settings size={20} />} label="Settings" />
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0a]">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6">
+      <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-black/40 backdrop-blur-md">
-          <div className="flex items-center gap-4 flex-1 max-w-xl">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-              <input 
-                type="text" 
-                placeholder="Search notes, loops, or ideas..." 
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 focus:outline-none focus:border-brand-primary/50 transition-colors"
-              />
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <Plus size={24} />
-            </button>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-primary to-brand-secondary" />
-          </div>
-        </header>
-
-        {/* Dashboard Content */}
-        <div className="p-8 flex-1 overflow-y-auto">
-          <header className="mb-10 flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-heading font-bold mb-2">Morning, Pavan</h1>
-              <p className="text-slate-400">You have 3 loops active today. Ready to flow?</p>
-            </div>
-          </header>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <NoteCard 
-              title="Welcome to Loopnote" 
-              excerpt="This is your workspace. Feel the flow, move between ideas, and connect everything..." 
-              date="Today"
-              tag="Guide"
-            />
-             <NoteCard 
-              title="Next.js 17 Exploration" 
-              excerpt="New routing patterns and nested layouts are changing the game. Need to check docs..." 
-              date="2h ago"
-              tag="Tech"
-              color="indigo"
-            />
-            <NoteCard 
-              title="Grocery List" 
-              excerpt="Smoothies, Almond milk, Blueberries, Dark chocolate, Coffee beans..." 
-              date="Yesterday"
-              tag="Personal"
-              color="emerald"
-            />
-          </div>
+        <div className="flex justify-between items-center mb-12">
+          <h1 className="text-3xl font-serif italic">LoopNote</h1>
+          <button
+            onClick={handleLogout}
+            className="text-sm text-slate-400 hover:text-white transition"
+          >
+            Log out
+          </button>
         </div>
-      </main>
+
+        {/* Welcome */}
+        <div className="mb-8">
+          <p className="text-slate-400 text-sm mb-2">Welcome back</p>
+          <h2 className="text-2xl font-serif italic">{user?.email}</h2>
+        </div>
+
+        {/* Write note button */}
+        <button
+          onClick={() => router.push('/new')}
+          className="mb-8 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-medium transition"
+        >
+          + Write a Note
+        </button>
+
+        {/* Notes list */}
+        {notes.length === 0 ? (
+          <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-2xl p-12 text-center">
+            <p className="text-6xl mb-4">📬</p>
+            <h3 className="text-2xl font-serif italic mb-2">No notes yet</h3>
+            <p className="text-slate-400">
+              Write your first letter to your future self.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {notes.map((note) => {
+              const days = daysUntil(note.delivery_date)
+              const isDelivered = days <= 0
+              return (
+                <div
+                  key={note.id}
+                  className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-2xl p-6 hover:border-emerald-500 transition"
+                >
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{isDelivered ? '📬' : '🔒'}</span>
+                      <span className="text-sm text-slate-400">
+                        {isDelivered
+                          ? 'Unlocked'
+                          : `Opens in ${days} day${days === 1 ? '' : 's'}`}
+                      </span>
+                    </div>
+                    <span className="text-xs text-slate-500">
+                      Delivers {new Date(note.delivery_date).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  {isDelivered ? (
+                    <p className="text-white whitespace-pre-wrap">{note.content}</p>
+                  ) : (
+                    <p className="text-slate-500 italic">
+                      Locked. This message from your past self is waiting.
+                    </p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
-  );
-}
-
-function NavItem({ icon, label, active, dot }: { icon?: React.ReactNode, label: string, active?: boolean, dot?: string }) {
-  return (
-    <button suppressHydrationWarning className={`
-      w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all
-      ${active ? 'bg-white/10 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}
-    `}>
-      {icon}
-      {dot && <div className={`w-2 h-2 rounded-full bg-${dot}-500`} />}
-      <span className="text-sm font-medium">{label}</span>
-    </button>
-  );
-}
-
-function NoteCard({ title, excerpt, date, tag, color = "purple" }: { title: string, excerpt: string, date: string, tag: string, color?: string }) {
-  return (
-    <motion.div 
-      whileHover={{ y: -4 }}
-      className="p-6 rounded-3xl glass border-white/5 flex flex-col gap-4 cursor-pointer hover:bg-white/[0.07] transition-colors group"
-    >
-      <div className="flex justify-between items-start">
-        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md bg-${color}-500/20 text-${color}-400`}>
-          {tag}
-        </span>
-        <MoreHorizontal size={18} className="text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-      </div>
-      <div>
-        <h3 className="text-xl font-heading font-bold mb-2 group-hover:text-brand-primary transition-colors">{title}</h3>
-        <p className="text-slate-400 text-sm line-clamp-3 leading-relaxed">
-          {excerpt}
-        </p>
-      </div>
-      <div className="mt-4 flex items-center justify-between text-xs text-slate-500 font-medium">
-        <span>{date}</span>
-        <ChevronRight size={14} />
-      </div>
-    </motion.div>
-  );
+  )
 }
